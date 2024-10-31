@@ -1,0 +1,54 @@
+services:
+
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    depends_on:
+      - nginx-yasobral
+      - database-yasobral
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - default
+
+  nginx-yasobral:
+    image: nginx:alpine
+    container_name: nginx-yasobral
+    restart: unless-stopped
+    tty: true
+    ports:
+      - '8081:80'
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - default
+
+  database-yasobral:
+    container_name: database-yasobral
+    image: postgres:15.2
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yasobral
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./docker/tmp/db:/var/lib/postgresql/data
+    networks:
+      - default
+    command:
+      - "postgres"
+      - "-c"
+      - "max_locks_per_transaction=1024"
+
+networks:
+  default:
+    driver: bridge
